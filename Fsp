@@ -1,0 +1,280 @@
+-- สคริปต์ FPS + เวลา + Potato Mode + ตั้งค่าตัวอักษร & ธีมกล่อง (ย้ายชิดมุมขวา)
+local CoreGui = game:GetService("CoreGui")
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local Lighting = game:GetService("Lighting")
+
+-- ลบอันเก่าออกก่อนหากรันซ้ำ
+if CoreGui:FindFirstChild("FPSOverlayTheme") then
+    CoreGui.FPSOverlayTheme:Destroy()
+end
+
+-- 1. สร้าง ScreenGui
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "FPSOverlayTheme"
+screenGui.ResetOnSpawn = false
+
+local success = pcall(function() screenGui.Parent = CoreGui end)
+if not success or not screenGui.Parent then
+    local player = Players.LocalPlayer
+    if player then screenGui.Parent = player:WaitForChild("PlayerGui") end
+end
+
+-- 2. สร้าง Frame หลัก (วางไว้มุมขวาบน: AnchorPoint X = 1, Position X = 1 - 10px)
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.new(0, 190, 0, 85)
+mainFrame.Position = UDim2.new(1, -200, 0, 10) -- ชิดขวาบน
+mainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+mainFrame.BackgroundTransparency = 0.25
+mainFrame.BorderSizePixel = 0
+mainFrame.Parent = screenGui
+
+local uiCorner = Instance.new("UICorner")
+uiCorner.CornerRadius = UDim.new(0, 8)
+uiCorner.Parent = mainFrame
+
+-- TextLabel แสดง FPS + เวลา
+local textLabel = Instance.new("TextLabel")
+textLabel.Size = UDim2.new(1, -35, 0, 45)
+textLabel.Position = UDim2.new(0, 8, 0, 5)
+textLabel.BackgroundTransparency = 1
+textLabel.TextColor3 = Color3.fromRGB(0, 255, 127) -- สีตัวหนังสือเริ่มต้น
+textLabel.TextSize = 13
+textLabel.Font = Enum.Font.Code
+textLabel.TextXAlignment = Enum.TextXAlignment.Left
+textLabel.Parent = mainFrame
+
+-- ปุ่ม Potato Mode
+local toggleBtn = Instance.new("TextButton")
+toggleBtn.Size = UDim2.new(1, -16, 0, 24)
+toggleBtn.Position = UDim2.new(0, 8, 0, 52)
+toggleBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+toggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+toggleBtn.Text = "🥔 Potato Mode: OFF"
+toggleBtn.Font = Enum.Font.SourceSansBold
+toggleBtn.TextSize = 13
+toggleBtn.Parent = mainFrame
+
+local btnCorner = Instance.new("UICorner")
+btnCorner.CornerRadius = UDim.new(0, 5)
+btnCorner.Parent = toggleBtn
+
+-- ปุ่มเปิด/ปิด เมนูตั้งค่า (⚙️)
+local settingsBtn = Instance.new("TextButton")
+settingsBtn.Size = UDim2.new(0, 22, 0, 22)
+settingsBtn.Position = UDim2.new(1, -26, 0, 6)
+settingsBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+settingsBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+settingsBtn.Text = "⚙️"
+settingsBtn.TextSize = 12
+settingsBtn.Parent = mainFrame
+
+local setBtnCorner = Instance.new("UICorner")
+setBtnCorner.CornerRadius = UDim.new(0, 4)
+setBtnCorner.Parent = settingsBtn
+
+-- 3. สร้าง Frame หน้าต่างตั้งค่า (เด้งออกมาใต้ UI หลัก ชิดมุมขวา)
+local settingsFrame = Instance.new("Frame")
+settingsFrame.Size = UDim2.new(0, 190, 0, 130)
+settingsFrame.Position = UDim2.new(1, -200, 0, 100) -- ชิดขวาบน (ใต้ Frame หลัก)
+settingsFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+settingsFrame.BackgroundTransparency = 0.2
+settingsFrame.BorderSizePixel = 0
+settingsFrame.Visible = false
+settingsFrame.Parent = screenGui
+
+local setFrameCorner = Instance.new("UICorner")
+setFrameCorner.CornerRadius = UDim.new(0, 8)
+setFrameCorner.Parent = settingsFrame
+
+-- หัวข้อตั้งค่า
+local titleLabel = Instance.new("TextLabel")
+titleLabel.Size = UDim2.new(1, 0, 0, 20)
+titleLabel.BackgroundTransparency = 1
+titleLabel.Text = "⚙️ ตั้งค่า (Settings)"
+titleLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+titleLabel.Font = Enum.Font.SourceSansBold
+titleLabel.TextSize = 13
+titleLabel.Parent = settingsFrame
+
+--- Section 1: ปรับขนาดตัวอักษร ---
+local sizeLabel = Instance.new("TextLabel")
+sizeLabel.Size = UDim2.new(0, 70, 0, 25)
+sizeLabel.Position = UDim2.new(0, 8, 0, 22)
+sizeLabel.BackgroundTransparency = 1
+sizeLabel.Text = "ขนาดตัวอักษร:"
+sizeLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+sizeLabel.Font = Enum.Font.SourceSans
+sizeLabel.TextSize = 11
+sizeLabel.TextXAlignment = Enum.TextXAlignment.Left
+sizeLabel.Parent = settingsFrame
+
+local minusBtn = Instance.new("TextButton")
+minusBtn.Size = UDim2.new(0, 22, 0, 20)
+minusBtn.Position = UDim2.new(0, 125, 0, 24)
+minusBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+minusBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+minusBtn.Text = "-"
+minusBtn.Font = Enum.Font.SourceSansBold
+minusBtn.TextSize = 14
+minusBtn.Parent = settingsFrame
+
+local plusBtn = Instance.new("TextButton")
+plusBtn.Size = UDim2.new(0, 22, 0, 20)
+plusBtn.Position = UDim2.new(0, 153, 0, 24)
+plusBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+plusBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+plusBtn.Text = "+"
+plusBtn.Font = Enum.Font.SourceSansBold
+plusBtn.TextSize = 14
+plusBtn.Parent = settingsFrame
+
+--- Section 2: เลือกสีตัวอักษร ---
+local textColorsTitle = Instance.new("TextLabel")
+textColorsTitle.Size = UDim2.new(0, 70, 0, 25)
+textColorsTitle.Position = UDim2.new(0, 8, 0, 50)
+textColorsTitle.BackgroundTransparency = 1
+textColorsTitle.Text = "สีตัวอักษร:"
+textColorsTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+textColorsTitle.Font = Enum.Font.SourceSans
+textColorsTitle.TextSize = 11
+textColorsTitle.TextXAlignment = Enum.TextXAlignment.Left
+textColorsTitle.Parent = settingsFrame
+
+local textColors = {
+    Color3.fromRGB(0, 255, 127), -- เขียว
+    Color3.fromRGB(0, 200, 255), -- ฟ้า
+    Color3.fromRGB(255, 220, 0), -- เหลือง
+    Color3.fromRGB(255, 255, 255) -- ขาว
+}
+
+for i, color in ipairs(textColors) do
+    local cBtn = Instance.new("TextButton")
+    cBtn.Size = UDim2.new(0, 18, 0, 18)
+    cBtn.Position = UDim2.new(0, 75 + ((i-1) * 24), 0, 54)
+    cBtn.BackgroundColor3 = color
+    cBtn.Text = ""
+    cBtn.Parent = settingsFrame
+    
+    local cCorner = Instance.new("UICorner")
+    cCorner.CornerRadius = UDim.new(1, 0)
+    cCorner.Parent = cBtn
+    
+    cBtn.MouseButton1Click:Connect(function()
+        textLabel.TextColor3 = color
+    end)
+end
+
+--- Section 3: ระบบธีมแบบกำหนดเอง (สีกล่อง UI) ---
+local bgColorsTitle = Instance.new("TextLabel")
+bgColorsTitle.Size = UDim2.new(0, 70, 0, 25)
+bgColorsTitle.Position = UDim2.new(0, 8, 0, 82)
+bgColorsTitle.BackgroundTransparency = 1
+bgColorsTitle.Text = "ธีมสีกล่อง UI:"
+bgColorsTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+bgColorsTitle.Font = Enum.Font.SourceSans
+bgColorsTitle.TextSize = 11
+bgColorsTitle.TextXAlignment = Enum.TextXAlignment.Left
+bgColorsTitle.Parent = settingsFrame
+
+local themeColors = {
+    Color3.fromRGB(15, 15, 15),   -- Dark (ดำ)
+    Color3.fromRGB(15, 25, 45),   -- Midnight (น้ำเงินเข้ม)
+    Color3.fromRGB(45, 15, 20),   -- Crimson (แดงเข้ม)
+    Color3.fromRGB(30, 15, 45)    -- Purple (ม่วงเข้ม)
+}
+
+for i, themeColor in ipairs(themeColors) do
+    local tBtn = Instance.new("TextButton")
+    tBtn.Size = UDim2.new(0, 18, 0, 18)
+    tBtn.Position = UDim2.new(0, 75 + ((i-1) * 24), 0, 86)
+    tBtn.BackgroundColor3 = themeColor
+    tBtn.Text = ""
+    tBtn.Parent = settingsFrame
+    
+    local tCorner = Instance.new("UICorner")
+    tCorner.CornerRadius = UDim.new(0, 4)
+    tCorner.Parent = tBtn
+    
+    tBtn.MouseButton1Click:Connect(function()
+        mainFrame.BackgroundColor3 = themeColor
+        settingsFrame.BackgroundColor3 = themeColor
+    end)
+end
+
+-- ระบบปุ่มกดใน Settings
+settingsBtn.MouseButton1Click:Connect(function()
+    settingsFrame.Visible = not settingsFrame.Visible
+end)
+
+plusBtn.MouseButton1Click:Connect(function()
+    if textLabel.TextSize < 22 then
+        textLabel.TextSize = textLabel.TextSize + 1
+    end
+end)
+
+minusBtn.MouseButton1Click:Connect(function()
+    if textLabel.TextSize > 8 then
+        textLabel.TextSize = textLabel.TextSize - 1
+    end
+end)
+
+-- 4. ระบบ Potato Mode
+local isPotatoOn = false
+local function applyPotatoMode(enable)
+    if enable then
+        Lighting.GlobalShadows = false
+        Lighting.FogEnd = 9e9
+        for _, v in pairs(workspace:GetDescendants()) do
+            if v:IsA("BasePart") then
+                v.Material = Enum.Material.SmoothPlastic
+                v.CastShadow = false
+            elseif v:IsA("Decal") or v:IsA("Texture") then
+                v.Transparency = 1
+            elseif v:IsA("ParticleEmitter") or v:IsA("Trail") or v:IsA("Smoke") or v:IsA("Fire") then
+                v.Enabled = false
+            end
+        end
+    else
+        Lighting.GlobalShadows = true
+        Lighting.FogEnd = 10000
+    end
+end
+
+toggleBtn.MouseButton1Click:Connect(function()
+    isPotatoOn = not isPotatoOn
+    if isPotatoOn then
+        toggleBtn.Text = "🥔 Potato Mode: ON"
+        toggleBtn.BackgroundColor3 = Color3.fromRGB(220, 50, 50)
+        applyPotatoMode(true)
+    else
+        toggleBtn.Text = "🥔 Potato Mode: OFF"
+        toggleBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+        applyPotatoMode(false)
+    end
+end)
+
+-- 5. ลูปอัปเดต FPS + เวลา
+local frameCount = 0
+local lastTick = tick()
+local currentFPS = 0
+
+local connection
+connection = RunService.RenderStepped:Connect(function()
+    if not screenGui.Parent then
+        if connection then connection:Disconnect() end
+        return
+    end
+    
+    frameCount = frameCount + 1
+    local now = tick()
+    
+    if now - lastTick >= 1 then
+        currentFPS = math.floor(frameCount / (now - lastTick))
+        frameCount = 0
+        lastTick = now
+    end
+    
+    local timeString = os.date("%H:%M:%S")
+    textLabel.Text = string.format(" ⚡ FPS: %d\n 🕒 เวลา: %s", currentFPS, timeString)
+end)
